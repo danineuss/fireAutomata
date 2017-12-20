@@ -72,7 +72,8 @@ public class Cell : MonoBehaviour {
 
     public void AddNeighbor(CellDirection direction, Cell cell)
     {
-        if (cell != null)
+        // If the cell is valid and not yet in the neighbor dictionary, then add it.
+        if (cell != null && !neighbors.ContainsKey(direction))
         {
             neighbors.Add(direction, cell);
         }
@@ -111,6 +112,11 @@ public class Cell : MonoBehaviour {
     {
         currentValue = 1.0f;
         ChangeColor(activatedCellColor);
+
+        foreach (Cell neighbor in neighbors.Values)
+        {
+            neighbor.ChangeColor(Color.red);
+        }
     }
 
     public void ChangeColor (Color newColor)

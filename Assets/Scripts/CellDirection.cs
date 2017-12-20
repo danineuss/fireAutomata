@@ -45,7 +45,6 @@ public static class CellDirectionExtensions
         }
         return newDirection;
     }
-
     
     public static Vector2 Offset(CellDirection[] directions)
     {
