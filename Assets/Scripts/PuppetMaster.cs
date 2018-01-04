@@ -13,8 +13,8 @@ public class PuppetMaster : MonoBehaviour
 
     float elapsedTime = 0.0f;
     float timeStep = 0.1f;
-    public int score;
-    bool gameStarted = false;
+    public int score; 
+    bool gameRunning = false;
 
 	// Use this for initialization
 	void Awake ()
@@ -31,12 +31,12 @@ public class PuppetMaster : MonoBehaviour
     {
         score = 0;
         elapsedTime = 0.0f;
-        gameStarted = true;
+        gameRunning = true;
     }
 
     void Update()
     {
-        if (gameStarted)
+        if (gameRunning)
         {
             elapsedTime += Time.deltaTime;
             if (elapsedTime >= timeStep)
@@ -47,25 +47,22 @@ public class PuppetMaster : MonoBehaviour
         }
     }
 
-    public void UpdateCells()
+    void UpdateCells()
     {
-        if (gameStarted)
+        // First, Game of Life happens.
+        foreach (Cell cell in map.cellDict.Values)
         {
-            // First, Game of Life happens.
-            foreach (Cell cell in map.cellDict.Values)
-            {
-                EvolveCell(cell);
-            }
+            EvolveCell(cell);
+        }
 
-            // Here the double buffering is switched and Next become Current. Additionally, we update the cellArray.
-            foreach (Cell cell in map.cellDict.Values)
-            {
-                cell.UpdateCell();
-            }
+        // Here the double buffering is switched and Next become Current. Additionally, we update the cellArray.
+        foreach (Cell cell in map.cellDict.Values)
+        {
+            cell.UpdateCell();
         }
     }
 
-    public void ResetCells()
+    void ResetCells()
     {
         foreach (Cell cell in map.cellDict.Values)
         {
@@ -106,5 +103,21 @@ public class PuppetMaster : MonoBehaviour
                 cell.NextValue = 0.0f;
             }
         }
+    }
+
+    public void NewGame ()
+    {
+        ResetCells();
+        gameRunning = false;
+    }
+
+    public void StartPauseGame ()
+    {
+        gameRunning = !gameRunning;
+    }
+
+    public void IterateOneStep ()
+    {
+        UpdateCells();
     }
 }

@@ -52,8 +52,6 @@ public class MapGenerator : MonoBehaviour {
         {
             SetNeighbors(coordinates);
         }
-
-        //ImprintStartingPattern(startingPatterns.circleOfFire);
     }
 
     void ImprintStartingPattern (int[,] startingPattern)
@@ -97,8 +95,6 @@ public class MapGenerator : MonoBehaviour {
 
     void SetNeighbors(Vector2 coordinates)
     {
-        Debug.Log(coordinates);
-
         List<CellDirection> possibleNeighbors = new List<CellDirection>();
         possibleNeighbors.Add(CellDirection.N);
         possibleNeighbors.Add(CellDirection.E);
