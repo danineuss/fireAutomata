@@ -110,12 +110,15 @@ public class Cell : MonoBehaviour {
     
     void OnMouseDown ()
     {
-        currentValue = 1.0f;
-        ChangeColor(activatedCellColor);
-
-        foreach (Cell neighbor in neighbors.Values)
+        if (currentValue == 1.0f)
         {
-            neighbor.ChangeColor(Color.red);
+            currentValue = 0.0f;
+            ChangeColor(defaultCellColor);
+        }
+        else
+        {
+            currentValue = 1.0f;
+            ChangeColor(activatedCellColor);
         }
     }
 

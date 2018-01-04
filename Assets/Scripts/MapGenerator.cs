@@ -10,6 +10,7 @@ public class MapGenerator : MonoBehaviour {
 
     public Cell cellPrefab;
     public Vector2 mapSize;
+    public bool wrappingBoarders;
     string holderName = "Generated Map";
 
     [Range(0,1)] public float outlinePercent;
@@ -48,28 +49,18 @@ public class MapGenerator : MonoBehaviour {
         }
         
         // Then create all the neighborhood relationships.
-        foreach (Vector2 coordinates in cellDict.Keys)
+        if (wrappingBoarders)
         {
-            SetNeighbors(coordinates);
-        }
-    }
-
-    void ImprintStartingPattern (int[,] startingPattern)
-    {
-        int patternX = startingPattern.GetLength(0);
-        int patternY = startingPattern.GetLength(1);
-
-        //The starting pattern should be placed all the way to the right and in the middle of the "height" (Y).
-        int startingX = (int)mapSize.x - patternX;
-        int endingX = (int)mapSize.x;
-        int startingY = ((int)mapSize.y - patternY) / 2;
-        int endingY = ((int)mapSize.y + patternY) / 2;
-
-        for (int x = startingX; x < endingX; x++)
-        {
-            for (int y = startingY; y < endingY; y++)
+            foreach (Vector2 coordinates in cellDict.Keys)
             {
-                cellDict[new Vector2(x, y)].CurrentValue = startingPattern[x - startingX, y - startingY];
+                SetNeighborsWrapped(coordinates);
+            }
+        }
+        else
+        {
+            foreach (Vector2 coordinates in cellDict.Keys)
+            {
+                SetNeighbors(coordinates);
             }
         }
     }
@@ -93,6 +84,10 @@ public class MapGenerator : MonoBehaviour {
         startingValues.Add(coordinates, 0);
     }
 
+    /// <summary>
+    /// This sets the neighbors without taking wrapped boarders into account. Simply the direct neighbors.
+    /// </summary>
+    /// <param name="coordinates">The coordinates of the current cell, for which the neighbors are set.</param>
     void SetNeighbors(Vector2 coordinates)
     {
         List<CellDirection> possibleNeighbors = new List<CellDirection>();
@@ -150,6 +145,11 @@ public class MapGenerator : MonoBehaviour {
         {
             PairCells(coordinates, direction);
         }
+    }
+
+    void SetNeighborsWrapped (Vector2 coordinates)
+    {
+
     }
 
     /// <summary>

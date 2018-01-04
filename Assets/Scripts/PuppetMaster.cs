@@ -107,8 +107,8 @@ public class PuppetMaster : MonoBehaviour
 
     public void NewGame ()
     {
-        ResetCells();
         gameRunning = false;
+        ResetCells();
     }
 
     public void StartPauseGame ()
