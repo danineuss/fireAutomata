@@ -143,13 +143,73 @@ public class MapGenerator : MonoBehaviour {
         //Now we have a list of all neighbors which have to be mated. Now you can do the mating!
         foreach (CellDirection direction in possibleNeighbors)
         {
-            PairCells(coordinates, direction);
+            AddNeighbor(coordinates, direction);
         }
     }
 
     void SetNeighborsWrapped (Vector2 coordinates)
     {
+        // Adjusting the map size to not always subtract one.
+        Vector2 mapSizeMinor = mapSize - new Vector2(1, 1);
 
+        // Here every cell has eight neighbors. We simply have to figure out the boarder cases.
+        List<CellDirection> directions = new List<CellDirection>();
+        for (int i = 0; i <= 7; i++)
+        {
+            directions.Add((CellDirection)i);
+        }
+
+        // East or West
+        if (coordinates.x == 0)
+        {
+            PairCells(coordinates, new Vector2(mapSizeMinor.x, coordinates.y), CellDirection.W);
+            directions.Remove(CellDirection.W);
+        }
+        else if (coordinates.x == mapSize.x - 1)
+        {
+            PairCells(coordinates, new Vector2(0, coordinates.y), CellDirection.E);
+            directions.Remove(CellDirection.E);
+        }
+
+        // North or South
+        if (coordinates.y == 0)
+        {
+            PairCells(coordinates, new Vector2(coordinates.x, mapSizeMinor.y), CellDirection.S);
+            directions.Remove(CellDirection.S);
+        }
+        else if (coordinates.y == mapSize.y - 1)
+        {
+            PairCells(coordinates, new Vector2(coordinates.x, 0), CellDirection.N);
+            directions.Remove(CellDirection.N);
+        }
+
+        // Corner cases:
+        if (coordinates == new Vector2(0, 0))
+        {
+            PairCells(coordinates, mapSizeMinor, CellDirection.SW);
+            directions.Remove(CellDirection.SW);
+        }
+        else if (coordinates == new Vector2(0, mapSizeMinor.y))
+        {
+            PairCells(coordinates, new Vector2(mapSizeMinor.x, 0), CellDirection.NW);
+            directions.Remove(CellDirection.NW);
+        }
+        else if (coordinates == mapSizeMinor)
+        {
+            PairCells(coordinates, new Vector2(0, 0), CellDirection.NE);
+            directions.Remove(CellDirection.NE);
+        }
+        else if (coordinates == new Vector2(mapSizeMinor.x, 0))
+        {
+            PairCells(coordinates, new Vector2(0, mapSizeMinor.y), CellDirection.SE);
+            directions.Remove(CellDirection.SE);
+        }
+
+        //Now we have a list of all remaining ("normal") neighbors which have to be mated. Do the mating!
+        foreach (CellDirection direction in directions)
+        {
+            AddNeighbor(coordinates, direction);
+        }
     }
 
     /// <summary>
@@ -157,9 +217,21 @@ public class MapGenerator : MonoBehaviour {
     /// </summary>
     /// <param name="currentCoordinates">The cell which is examined now.</param>
     /// <param name="toNeighbor">The vector from the current to the previous cell.</param>
-    void PairCells(Vector2 currentCoordinates, CellDirection toNeighbor)
+    void AddNeighbor(Vector2 currentCoordinates, CellDirection toNeighbor)
     {
         Vector2 neighborCoordinates = currentCoordinates + CellDirectionExtensions.Offset(toNeighbor);
+        PairCells(currentCoordinates, neighborCoordinates, toNeighbor);
+    }
+
+    /// <summary>
+    /// This function does the actual pairing of two cells. This function is required separately for the wrapped coordinate system,
+    /// since there the two coordinates and the direction don't have a direct connection.
+    /// </summary>
+    /// <param name="currentCoordinates">This cells coordinates.</param>
+    /// <param name="neighborCoordinates">The neighboring cell's coordinates.</param>
+    /// <param name="toNeighbor">The direction towards the neighboring cell.</param>
+    void PairCells(Vector2 currentCoordinates, Vector2 neighborCoordinates, CellDirection toNeighbor)
+    {
         GetCell(currentCoordinates).AddNeighbor(toNeighbor, GetCell(neighborCoordinates));
         GetCell(neighborCoordinates).AddNeighbor(toNeighbor.Opposite(), GetCell(currentCoordinates));
     }
