@@ -11,18 +11,15 @@ public class MapGenerator : MonoBehaviour {
     public Cell cellPrefab;
     public Vector2 mapSize;
     public bool wrappingBoarders;
-    string holderName = "Generated Map";
-
     [Range(0,1)] public float outlinePercent;
     
     public Dictionary<Vector2, Cell> cellDict;
-    Dictionary<Vector2, int> startingValues;
     public int[,] cellArray;
+    string holderName = "Generated Map";
 
     public void Initialize()
     {
         cellDict = new Dictionary<Vector2, Cell>();
-        startingValues = new Dictionary<Vector2, int>();
         GenerateMap();
         GenerateArray();
     }
@@ -47,7 +44,7 @@ public class MapGenerator : MonoBehaviour {
                 CreateCell(coordinates, mapHolder);
             }
         }
-        
+
         // Then create all the neighborhood relationships.
         if (wrappingBoarders)
         {
@@ -70,18 +67,6 @@ public class MapGenerator : MonoBehaviour {
         int arrayX = (int)mapSize.x;
         int arrayY = (int)mapSize.y;
         cellArray = new int[arrayX, arrayY];
-    }
-
-    void CreateCell(Vector2 coordinates, Transform mapHolder)
-    {
-        Vector3 cellPosition = new Vector3(-mapSize.x / 2 + 0.5f + coordinates.x, -mapSize.y / 2 + 0.5f + coordinates.y, 0);
-
-        Cell currentCell = Instantiate(cellPrefab, cellPosition, Quaternion.identity, mapHolder);
-        currentCell.Initialize(coordinates);
-        currentCell.transform.localScale = Vector3.one * (1 - outlinePercent);
-
-        cellDict.Add(coordinates, currentCell);
-        startingValues.Add(coordinates, 0);
     }
 
     /// <summary>
@@ -143,10 +128,16 @@ public class MapGenerator : MonoBehaviour {
         //Now we have a list of all neighbors which have to be mated. Now you can do the mating!
         foreach (CellDirection direction in possibleNeighbors)
         {
-            AddNeighbor(coordinates, direction);
+            Vector2 neighborCoordinates = coordinates + CellDirectionExtensions.Offset(direction);
+            PairCells(coordinates, neighborCoordinates, direction);
         }
     }
 
+    /// <summary>
+    /// This function will create the neighborhood relationships when the boarders are wrapping around the board.
+    /// This means, going over the edge on the east will put you all the way on the west boarder, just as in Snake (TM).
+    /// </summary>
+    /// <param name="coordinates">The coordinates of the current cell.</param>
     void SetNeighborsWrapped (Vector2 coordinates)
     {
         // Adjusting the map size to not always subtract one.
@@ -159,68 +150,89 @@ public class MapGenerator : MonoBehaviour {
             directions.Add((CellDirection)i);
         }
 
-        // East or West
         if (coordinates.x == 0)
         {
+            float northWestY = (coordinates.y + 1) % mapSize.y;
+            float southWestY = coordinates.y - 1;
+            if (southWestY < 0)
+            {
+                southWestY += mapSize.y;
+            }
+
             PairCells(coordinates, new Vector2(mapSizeMinor.x, coordinates.y), CellDirection.W);
+            PairCells(coordinates, new Vector2(mapSizeMinor.x, northWestY), CellDirection.NW);
+            PairCells(coordinates, new Vector2(mapSizeMinor.x, southWestY), CellDirection.SW);
             directions.Remove(CellDirection.W);
-        }
-        else if (coordinates.x == mapSize.x - 1)
-        {
-            PairCells(coordinates, new Vector2(0, coordinates.y), CellDirection.E);
-            directions.Remove(CellDirection.E);
-        }
-
-        // North or South
-        if (coordinates.y == 0)
-        {
-            PairCells(coordinates, new Vector2(coordinates.x, mapSizeMinor.y), CellDirection.S);
-            directions.Remove(CellDirection.S);
-        }
-        else if (coordinates.y == mapSize.y - 1)
-        {
-            PairCells(coordinates, new Vector2(coordinates.x, 0), CellDirection.N);
-            directions.Remove(CellDirection.N);
-        }
-
-        // Corner cases:
-        if (coordinates == new Vector2(0, 0))
-        {
-            PairCells(coordinates, mapSizeMinor, CellDirection.SW);
+            directions.Remove(CellDirection.NW);
             directions.Remove(CellDirection.SW);
         }
-        else if (coordinates == new Vector2(0, mapSizeMinor.y))
+        else if (coordinates.x == mapSizeMinor.x)
         {
-            PairCells(coordinates, new Vector2(mapSizeMinor.x, 0), CellDirection.NW);
-            directions.Remove(CellDirection.NW);
-        }
-        else if (coordinates == mapSizeMinor)
-        {
-            PairCells(coordinates, new Vector2(0, 0), CellDirection.NE);
+            float northEastY = (coordinates.y + 1) % mapSize.y;
+            float southEastY = coordinates.y - 1;
+            if (southEastY < 0)
+            {
+                southEastY += mapSize.y;
+            }
+            
+            PairCells(coordinates, new Vector2(0, coordinates.y), CellDirection.E);
+            PairCells(coordinates, new Vector2(0, northEastY), CellDirection.NE);
+            PairCells(coordinates, new Vector2(0, southEastY), CellDirection.SE);
+            directions.Remove(CellDirection.E);
             directions.Remove(CellDirection.NE);
-        }
-        else if (coordinates == new Vector2(mapSizeMinor.x, 0))
-        {
-            PairCells(coordinates, new Vector2(0, mapSizeMinor.y), CellDirection.SE);
             directions.Remove(CellDirection.SE);
+        }
+
+        if (coordinates.y == 0)
+        {
+            float southEastX = (coordinates.x + 1) % mapSize.x;
+            float southWestX = coordinates.x - 1;
+            if (southWestX < 0)
+            {
+                southWestX += mapSize.x;
+            }
+
+            PairCells(coordinates, new Vector2(coordinates.x, mapSizeMinor.y), CellDirection.S);
+            PairCells(coordinates, new Vector2(southWestX, mapSizeMinor.y), CellDirection.SW);
+            PairCells(coordinates, new Vector2(southEastX, mapSizeMinor.y), CellDirection.SE);
+            directions.Remove(CellDirection.S);
+            directions.Remove(CellDirection.SW);
+            directions.Remove(CellDirection.SE);
+        }
+        else if (coordinates.y == mapSizeMinor.y)
+        {
+            float northEastX = (coordinates.x + 1) % mapSize.x;
+            float northWestX = coordinates.x - 1;
+            if (northWestX < 0)
+            {
+                northWestX += mapSize.x;
+            }
+
+            PairCells(coordinates, new Vector2(coordinates.x, 0), CellDirection.N);
+            PairCells(coordinates, new Vector2(northWestX, 0), CellDirection.NW);
+            PairCells(coordinates, new Vector2(northEastX, 0), CellDirection.NE);
+            directions.Remove(CellDirection.N); 
+            directions.Remove(CellDirection.NW);
+            directions.Remove(CellDirection.NE);
         }
 
         //Now we have a list of all remaining ("normal") neighbors which have to be mated. Do the mating!
         foreach (CellDirection direction in directions)
         {
-            AddNeighbor(coordinates, direction);
+            Vector2 neighborCoordinates = coordinates + CellDirectionExtensions.Offset(direction);
+            PairCells(coordinates, neighborCoordinates, direction);
         }
     }
 
-    /// <summary>
-    /// This function will actually set up the neighborhood relationships between two cells by adding them to each others dictionaries.
-    /// </summary>
-    /// <param name="currentCoordinates">The cell which is examined now.</param>
-    /// <param name="toNeighbor">The vector from the current to the previous cell.</param>
-    void AddNeighbor(Vector2 currentCoordinates, CellDirection toNeighbor)
+    void CreateCell(Vector2 coordinates, Transform mapHolder)
     {
-        Vector2 neighborCoordinates = currentCoordinates + CellDirectionExtensions.Offset(toNeighbor);
-        PairCells(currentCoordinates, neighborCoordinates, toNeighbor);
+        Vector3 cellPosition = new Vector3(-mapSize.x / 2 + 0.5f + coordinates.x, -mapSize.y / 2 + 0.5f + coordinates.y, 0);
+
+        Cell currentCell = Instantiate(cellPrefab, cellPosition, Quaternion.identity, mapHolder);
+        currentCell.Initialize(coordinates);
+        currentCell.transform.localScale = Vector3.one * (1 - outlinePercent);
+
+        cellDict.Add(coordinates, currentCell);
     }
 
     /// <summary>
@@ -232,6 +244,8 @@ public class MapGenerator : MonoBehaviour {
     /// <param name="toNeighbor">The direction towards the neighboring cell.</param>
     void PairCells(Vector2 currentCoordinates, Vector2 neighborCoordinates, CellDirection toNeighbor)
     {
+        //Debug.Log(currentCoordinates);
+        //Debug.Log(neighborCoordinates);
         GetCell(currentCoordinates).AddNeighbor(toNeighbor, GetCell(neighborCoordinates));
         GetCell(neighborCoordinates).AddNeighbor(toNeighbor.Opposite(), GetCell(currentCoordinates));
     }

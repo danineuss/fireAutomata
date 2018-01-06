@@ -120,10 +120,6 @@ public class Cell : MonoBehaviour {
             currentValue = 1.0f;
             ChangeColor(activatedCellColor);
         }
-        foreach (Cell neighbor in neighbors.Values)
-        {
-            neighbor.ChangeColor(Color.red);
-        }
     }
 
     public void ChangeColor (Color newColor)
